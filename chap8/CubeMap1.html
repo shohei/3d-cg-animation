@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>CubeMap1</title>
+</head>
+
+<body onload="webMain()">
+<table>
+<tr>
+<form name = "form1">
+<p> canvasサイズ
+X<input type="number" name = "c_sizeX" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()"> 
+Y<input type="number" name = "c_sizeY" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()">&nbsp  
+fps<input type = "text" name = "fps" size = "2" > </p>
+</form>
+</tr>
+
+<tr>
+<td>
+<canvas id="WebGL" width="400" height="400" style="border: 2px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+</td>
+<td>
+<form name = "form2">
+<!--
+<p>
+  選択番号<input type="number" name = "selectNo" value = "0" step = "1" min = "0" max = "1" style = "width:50px;" onClick = "onClickSelectNo()" >
+</p>-->
+<p>選択番号
+<input type = "radio" name = "radio1" value = "0" checked onClick = "onChangeNo()"> 0&nbsp&nbsp
+<input type = "radio" name = "radio1" value = "1" onClick = "onChangeNo()"> 1
+</p>
+
+<p> ワイヤーフレーム<input type = "checkbox" name = "wireframe" onClick = "onClickWire()"></p>
+<p> マウス操作：オブジェクト<input type = "checkbox" name = "object" onClick = "onChangeMouse()"></p>
+
+<p>平行移動 
+X<input type="number" name = "translateX" value = "0.0" step = "0.1" style = "width:50px;" onClick = "onClickTranslate()" > 
+Y<input type="number" name = "translateY" value = "0.0" step = "0.1" style = "width:50px;" onClick = "onClickTranslate()" >  
+Z<input type="number" name = "translateZ" value = "0.0" step = "0.1" style = "width:50px;" onClick = "onClickTranslate()" >
+</p> 
+<p>拡大率&nbsp&nbsp 
+X<input type="number" name = "scaleX" value = "1.0" step = "0.1" style = "width:50px;" onClick = "onClickScale()" > 
+Y<input type="number" name = "scaleY" value = "1.0" step = "0.1" style = "width:50px;" onClick = "onClickScale()" >  
+Z<input type="number" name = "scaleZ" value = "1.0" step = "0.1" style = "width:50px;" onClick = "onClickScale()" > 
+</p> 
+
+<p>回転角度 
+X<input type="number" name = "rotateX" value = "0.0" step = "5.0" style = "width:50px;" onClick = "onClickRotate()" > 
+Y<input type="number" name = "rotateY" value = "0.0" step = "5.0" style = "width:50px;" onClick = "onClickRotate()" >  
+Z<input type="number" name = "rotateZ" value = "0.0" step = "5.0" style = "width:50px;" onClick = "onClickRotate()" > 
+</p>
+
+<p>光源位置 
+X<input type="number" name = "lightX" value = "0.0" step = "1.0" style = "width:50px;" onClick = "onClickLight()" > 
+Y<input type="number" name = "lightY" value = "0.0" step = "1.0" style = "width:50px;" onClick = "onClickLight()" >  
+Z<input type="number" name = "lightZ" value = "0.0" step = "1.0" style = "width:50px;" onClick = "onClickLight()" > 
+</p>
+<p>光源の種類
+<input type = "radio" name = "radioL" checked onClick = "onChangeLight()">点&nbsp&nbsp
+<input type = "radio" name = "radioL" onClick = "onChangeLight()"> 平行
+</p>
+
+<p>モード
+<input type = "radio" name = "radioM" value = "0" checked onClick = "onChangeMode()"> "変調"&nbsp&nbsp
+<input type = "radio" name = "radioM" value = "1" onClick = "onChangeMode()"> "混合"
+反射率 <input type="number" name = "reflectivity" value = "0.0" step = "0.1" min = "0" max = "1" style = "width:50px;" onClick = "onClickReflectivity()" > 
+</p>
+
+<p>
+<input type="button" name="start" value = "start" onclick="onClickStart()">
+<input type="button" name="stop" value="stop" onclick="onClickStop()">
+<input type="button" name="reset" value = "reset" onclick="onClickReset()">
+</p>
+</form>
+<td>
+</tr>
+</table>
+
+<script id = 'vs' type="x-shader/x-vertex">// 頂点シェーダのプログラム
+attribute vec4 a_vertex;    //頂点座標
+attribute vec4 a_normal;    //法線ベクトル
+uniform mat4 u_vpMatrix;    //ビュー投影行列
+uniform mat4 u_modelMatrix; //モデル行列
+uniform mat4 u_normalMatrix;//法線の座標変換行列
+varying vec3 v_WorldPos;    //FSへ渡す頂点のワールド座標
+varying vec3 v_Normal;      //FSへ渡す頂点の法線ベクトル
+
+void main() 
+{
+  // 頂点のワールド座標における位置と法線ベクトルを計算
+  v_WorldPos = vec3( u_modelMatrix * a_vertex);
+  v_Normal = normalize(vec3( u_normalMatrix * a_normal));
+
+  gl_Position = u_vpMatrix * u_modelMatrix * a_vertex;
+}
+</script>
+
+<script id = 'fs' type="x-shader/x-fragment">// フラグメントシェーダのプログラム
+#ifdef GL_ES
+precision mediump float;
+#endif
+uniform samplerCube u_sampler;//サンプラ
+uniform vec4 u_diffuseColor; //物体の拡散色
+uniform vec4 u_ambientColor; //物体の環境色
+uniform vec4 u_specularColor;//物体の鏡面色
+uniform float u_shininess;   //物体の光沢度
+uniform vec4 u_lightColor;   //光源の色
+uniform vec4 u_lightPos;     //光源の位置
+uniform vec3 u_cameraPos;    //視点の位置
+uniform int u_mode;          //色の合成モード
+uniform float u_reflectivity;//反射率
+varying vec3 v_WorldPos;
+varying vec3 v_Normal;
+
+void main() 
+{
+  // 法線の正規化
+  vec3 N = normalize(v_Normal);
+  // 光の方向を計算し、正規化
+  vec3 L ;
+  if(u_lightPos.w == 1.0) L = normalize(u_lightPos.xyz - v_WorldPos);
+  else L = normalize(u_lightPos.xyz);
+  // 法線と光の方向の内積
+  float dotNL = dot(N, L);
+  // 拡散色と環境色の計算
+  vec4 diffuse, ambient;
+  diffuse = u_lightColor * u_diffuseColor * max(dotNL, 0.0);
+  ambient = u_lightColor * u_ambientColor ;
+  //鏡面色の計算
+  vec3 V = normalize(u_cameraPos - v_WorldPos);
+  vec3 H = normalize(L + V);
+  float powNH = pow(max(dot(N, H), 0.0), u_shininess);
+  if(dotNL <= 0.0) powNH = 0.0;
+  vec4 specular = powNH * u_lightColor * u_specularColor;
+  
+  //環境マップ
+  vec3 ref =  reflect(-V, N);//-Vが入射視線
+  vec4 envColor = textureCube(u_sampler, ref);
+  if(u_mode == 0)//変調モード 
+    gl_FragColor = (diffuse + ambient) * envColor + specular;
+  else//混合モード      
+    gl_FragColor = mix(diffuse + ambient, envColor, u_reflectivity) + specular;
+}
+</script>
+
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/kwgShader.js"></script>
+<script src="../lib/kwgMatrix.js"></script>
+<script src="../lib/kwgMath.js"></script>
+<script src="../lib/kwgPrimitive.js"></script>
+<script src="../lib/kwgSupport.js"></script>
+<script src="../lib/kwgRigid.js"></script>
+<script src="cubeMap1.js"></script>
+</body>
+</html>

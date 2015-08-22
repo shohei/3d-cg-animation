@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>DrawPoint</title>
+</head>
+
+<body onload = "webMain()">
+<canvas id = "WebGL" width="400" height="400" style="border: 1px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+
+<script id = 'vs' type="x-shader/x-vertex">
+// 頂点シェーダのプログラム
+void main() 
+{
+  gl_Position = vec4(0.0, 0.0, 0.0, 1.0);  
+  gl_PointSize = 20.0;
+}
+</script>
+
+<script id = "fs" type="x-shader/x-fragment">//フラグメントシェーダのプログラム
+// フラグメントシェーダのプログラム
+void main() 
+{
+  gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+}
+</script>
+
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/kwgShader.js"></script>
+<script src = "drawPoint.js"></script>
+
+</body>
+</html>

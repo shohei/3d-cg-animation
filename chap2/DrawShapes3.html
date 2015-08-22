@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>DrawShapes3</title>
+</head>
+
+<body onload="webMain()">
+<table>
+<tr>
+<form name = "form1">
+<p> canvasサイズ X<input type="number" name = "c_sizeX" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()"> 
+    Y<input type="number" name = "c_sizeY" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()">  
+    　fps<input type = "text" name = "fps" size = "2" > </p>
+</form>
+</tr>
+
+<tr>
+<td>
+<canvas id="WebGL" width="400" height="400" style="border: 2px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+</td>
+<td>
+<form name = "form2">
+<p>
+  オブジェクト番号<input type="number" name = "objectNo" value = "0" step = "1" min = "0" max = "2" style = "width:50px;" onClick = "onChangeObjNo()" >
+<p>
+  塗りつぶす<input type = "radio" name = "radio1" value = "true" onClick = "onChangeFill()"> Yes
+            <input type = "radio" name = "radio1" value = "false" checked onClick = "onChangeFill()"> No
+</p>
+<p> 平行移動 X<input type="number" name = "translateX" value = "0.0" step = "0.1" style = "width:50px;" onClick = "onChangeTranslate()" > 
+    　Y<input type="number" name = "translateY" value = "0.0" step = "0.1" style = "width:50px;" onClick = "onChangeTranslate()" > </p> 
+<p> 拡大率 X <input type="number" name = "scaleX" value = "1.0" step = "0.1" style = "width:50px;" onClick = "onChangeScale()" > 
+    　   Y<input type="number" name = "scaleY" value = "1.0" step = "0.1" style = "width:50px;" onClick = "onChangeScale()" > </p> 
+<p> 回転角度<input type="number" name = "rotate" value = "0.0" step = "5.0" style = "width:80px;" onClick = "onChangeRotate()" > </p>
+<p> ステップ<input type="number" name = "angleStep" value = "10.0" step = "5.0" style = "width:50px;" onClick = "onChangeAngleStep()" > </p> 
+<p><input type="button" name="start" value = "start" onclick="onClickStart()">
+   <input type="button" name="stop" value="stop" onclick="onClickStop()"></p>
+</form>
+<td>
+</tr>
+</table>
+
+<script id = "vs" type="x-shader/x-vertex"> // 頂点シェーダのプログラム
+attribute vec4 a_vertex;
+uniform float u_angle;
+uniform float u_tx, u_ty;
+uniform float u_sx, u_sy;
+uniform float u_hpw;
+
+void main() 
+{
+  float ang, Sin, Cos;
+  ang = radians(u_angle);
+  Sin = sin(ang); Cos = cos(ang);
+  mat4 m_rot = mat4(
+     Cos,  Sin, 0.0, 0.0,
+    -Sin,  Cos, 0.0, 0.0,
+     0.0,  0.0, 1.0, 0.0,
+     0.0,  0.0, 0.0, 1.0 
+   );
+   mat4 m_trans = mat4(
+     1.0, 0.0, 0.0, 0.0,
+     0.0, 1.0, 0.0, 0.0,
+     0.0, 0.0, 1.0, 0.0,
+    u_tx,u_ty, 0.0, 1.0
+   );
+   mat4 m_scale = mat4(
+    u_sx, 0.0, 0.0, 0.0,
+     0.0,u_sy, 0.0, 0.0,
+     0.0, 0.0, 1.0, 0.0,
+     0.0, 0.0, 0.0, 1.0
+   );
+
+  gl_Position = m_rot * m_trans * m_scale * a_vertex ; 
+  gl_Position.x *= u_hpw ;
+  gl_Position.w = 1.0;
+}
+</script>
+
+<script id = "fs" type="x-shader/x-fragment">//フラグメントシェーダのプログラム 
+precision mediump float;//これを省略するとエラー！
+uniform vec4 u_color;
+void main() 
+{
+    gl_FragColor = u_color;
+}
+</script>
+
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/kwgShader.js"></script>
+<script src="drawShapes3.js"></script>
+</body>
+</html>

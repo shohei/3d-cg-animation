@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<title>DispMap</title>
+</head>
+<meta charset="utf-8" />
+<body onload="webMain()">
+<table>
+<tr>
+<form name = "form1">
+<p> canvasサイズ 
+X<input type="number" name = "c_sizeX" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()"> 
+Y<input type="number" name = "c_sizeY" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()">&nbsp
+fps<input type = "text" name = "fps" size = "2" > 
+</p>
+</form>
+</tr>
+
+<tr>
+<td>
+<canvas id="WebGL" width="400" height="400" style="border: 2px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+</td>
+<td>
+<form name = "form2">
+<p>
+object番号<input type="number" name = "objectNo" value = "0" step = "1" min = "0" max = "3" style = "width:40px;" onClick = "onChangeObjNo()" >
+object名<input type="text" name = "objectName" value = "平面" style = "width:60px;" >
+</p>
+<p> 表示モデル：ワイヤーフレーム<input type = "checkbox" name = "wireframe" onClick = "onChangeModel()"></p>
+<p> 
+マウス操作：object<input type = "checkbox" name = "object" onClick = "onChangeMouse()">&nbsp&nbsp
+反転<input type = "checkbox" name = "inverse" onClick = "onChangeInverse()">
+</p>
+
+<p>
+ nSlice<input type="number" name = "nSlice" value = "30" step = "1" min = "3" max = "200" style = "width:50px;" onClick = "onClickSlice()">&nbsp&nbsp
+ nStack<input type="number" name = "nStack" value = "30" step = "1" min = "3" max = "200" style = "width:50px;" onClick = "onClickStack()">
+</p>
+
+<p>
+ radiusRatio<input type="number" name = "radiusRatio" value = "0.5" step = "0.1" min = "0.0" max = "2.0" style = "width:50px;" onClick = "onClickRadiusRatio()">（トーラス)
+</p>
+<p> 
+ eps1<input type="number" name = "eps1" value = "1" step = "0.1" min = "0.1" max = "10.0" style = "width:50px;" onClick = "onClickEps()">
+ eps2<input type="number" name = "eps2" value = "1" step = "0.1" min = "0.1" max = "10.0" style = "width:50px;" onClick = "onClickEps()">（超2次曲面）
+</p>
+<p> 
+変位量調整<input type="number" name = "fDisp" value = "0.05" step = "0.01" min = "0.0" max = "0.1" style = "width:50px;" onClick = "onClickDisp()">
+</p>
+
+<p> 繰り返し:
+横軸(s)<input type="number" name = "repeatS" value = "1.0" step = "0.2" style = "width:50px;" onClick = "onClickRepeat()" > 
+縦軸(t)<input type="number" name = "repeatT" value = "1.0" step = "0.2" style = "width:50px;" onClick = "onClickRepeat()" > 
+</p>
+
+<p> 
+光源位置 
+X<input type="number" name = "lightX" value = "0.0" step = "1.0" style = "width:50px;" onClick = "onClickLight()" > 
+Y<input type="number" name = "lightY" value = "0.0" step = "1.0" style = "width:50px;" onClick = "onClickLight()" >  
+Z<input type="number" name = "lightZ" value = "0.0" step = "1.0" style = "width:50px;" onClick = "onClickLight()" > 
+
+<p> 影の濃さ <input type="number" name = "shadow" value = "0.0" step = "0.02" min = "0" max = "1" style = "width:50px;" onClick = "onClickShadow()" >&nbsp
+<input type="button" name="start" value = "start" onclick="onClickStart()">
+<input type="button" name="stop" value="stop" onclick="onClickStop()">
+<input type="button" name="reset" value = "reset" onclick="onClickReset()">
+</p>
+
+</form>
+<td>
+</tr>
+</table>
+
+<script id = 'vs' type="x-shader/x-vertex">// 頂点シェーダのプログラム
+uniform sampler2D u_samplerBump; // サンプラ
+attribute vec4 a_vertex;    //頂点座標
+attribute vec4 a_normal;    //法線ベクトル
+attribute vec2 a_texCoord;  //テクスチャ座標
+attribute vec4 a_color;     //フロアのチェック模様のときだけ
+uniform mat4 u_vpMatrix;    //ビュー投影行列
+uniform mat4 u_modelMatrix; //モデル行列
+uniform mat4 u_normalMatrix;//法線の座標変換行列
+uniform bool u_flagCheck;   //フロアのチェック模様フラグ
+uniform int u_objectNo;     //オブジェクト番号
+uniform float u_inverse;    //凹凸反転
+uniform float u_fDisp;      //変位量調整
+varying vec3 v_WorldPos;    //FSへ渡す頂点のワールド座標
+varying vec3 v_Normal;      //FSへ渡す頂点の法線ベクトル
+varying vec2 v_TexCoord;    //FSへ渡すテクスチャ座標
+varying vec3 v_Tangent;     //FSへ渡す接線ベクトル
+varying vec3 v_Binormal;    //FSへ渡す従法線ベクトル
+varying vec4 v_ColorCheck;  //FSへ渡すチェック模様
+void main() 
+{
+  // 頂点のワールド座標における位置,法線を計算
+  v_WorldPos = vec3( u_modelMatrix * a_vertex);
+  v_Normal = normalize(vec3( u_normalMatrix * a_normal));
+  v_TexCoord = a_texCoord;
+  //ワールド座標におけるｚ軸ベクトル
+  vec3 z_axis =  vec3(u_modelMatrix * vec4(0.0, 0.0, 1.0, 1.0));  
+  //頂点の変位
+  vec4 b_vertex = a_vertex;
+  if(!u_flagCheck)
+  {
+    vec4 texColor = texture2D(u_samplerBump, v_TexCoord);
+    //白地はシフトさせない
+    b_vertex.xyz += u_fDisp * u_inverse * a_normal.xyz * (texColor.r - 1.0) ;
+  }
+  //ワールド座標における新頂点座標
+  v_WorldPos = vec3( u_modelMatrix * b_vertex);
+
+  if(u_flagCheck) v_ColorCheck = a_color;//フロアだけ
+  else
+  {//床以外の基本立体に対し接線ベクトルと従法線ベクトルを計算
+    if(u_objectNo == 1 || u_objectNo == 3)//球と超2次曲面
+      v_Tangent = cross( z_axis, v_Normal);
+    else if(u_objectNo == 0) 
+      v_Tangent = vec3(u_modelMatrix * vec4(0.0, 1.0, 0.0, 1.0));//y軸がｓ軸
+    else v_Tangent = cross( z_axis, v_WorldPos);//トーラス
+
+    v_Binormal = cross(v_Normal, v_Tangent);
+  }
+  //クリップ空間の頂点座標
+  gl_Position = u_vpMatrix * u_modelMatrix * b_vertex;
+}
+</script>
+
+<script id = 'fs' type="x-shader/x-fragment">// フラグメントシェーダのプログラム
+#ifdef GL_ES
+precision mediump float;
+#endif
+uniform sampler2D u_samplerBump; // サンプラ
+uniform vec4 u_lightColor;   // 光の色
+uniform vec4 u_lightPos;     // 光源の位置
+uniform vec4 u_diffuseColor; // 物体の拡散色
+uniform vec4 u_ambientColor; // 物体の環境色
+uniform vec4 u_specularColor;// 物体の鏡面色
+uniform float u_shininess;   // 物体の光沢度
+uniform vec3 u_cameraPos;    // 視点
+uniform float u_shadow;      // 影の濃さ
+uniform bool u_flagTexture;  //テクスチャフラグ
+uniform bool u_flagCheck;    //floorのチェックフラグ
+uniform float u_inverse;     //凹凸反転
+varying vec3 v_WorldPos;
+varying vec3 v_Normal;
+varying vec2 v_TexCoord;
+varying vec3 v_Tangent;
+varying vec3 v_Binormal;
+varying vec4 v_ColorCheck;
+void main() 
+{
+  // 法線,接線,従法線の正規化
+  vec3 N = normalize(v_Normal);
+
+  vec3 T = normalize(v_Tangent);
+  vec3 B = normalize(v_Binormal);
+
+  if(u_flagTexture)
+  {
+    //テクスチャの高さを取得
+    const float d = 0.008;
+    vec4 texColorX2 = texture2D(u_samplerBump, v_TexCoord + vec2( d, 0.0));
+    vec4 texColorX1 = texture2D(u_samplerBump, v_TexCoord + vec2(-d, 0.0));
+    vec4 texColorY2 = texture2D(u_samplerBump, v_TexCoord + vec2(0.0, d));
+    vec4 texColorY1 = texture2D(u_samplerBump, v_TexCoord + vec2(0.0,-d));
+    //高さから勾配を計算
+    float deltaS = (texColorX2.r - texColorX1.r);
+    float deltaT = (texColorY2.r - texColorY1.r);
+    //新しい法線
+    N -= u_inverse * (T * deltaS + B * deltaT);
+  }
+
+  // 光の方向を計算し、正規化
+  vec3 L ;
+  if(u_lightPos.w == 1.0) L = normalize(u_lightPos.xyz - v_WorldPos);
+  else L = normalize(u_lightPos.xyz);
+  // 法線と光の方向の内積
+  float dotNL = dot(N, L);
+  
+  vec4 diffuse, ambient;
+  // 最終的な色を計算
+  if(u_flagCheck)
+  {
+    diffuse = u_lightColor * v_ColorCheck * max(dotNL, 0.0);
+    ambient = u_lightColor * v_ColorCheck * 0.5 ;
+    ambient.a = 1.0;//アルファ値を1未満にすると暗い所で白っぽくなる
+  }
+  else
+  {
+    diffuse = u_lightColor * u_diffuseColor * max(dotNL, 0.0);
+    ambient = u_lightColor * u_ambientColor ;
+  }
+  vec3 V = normalize(u_cameraPos - v_WorldPos);
+  vec3 H = normalize(L + V);
+  float powNH = pow(max(dot(N, H), 0.0), u_shininess);
+  if(dotNL <= 0.0) powNH = 0.0;
+  vec4 specular = powNH * u_lightColor * u_specularColor;
+    
+  //色成分の総和
+  if(u_shadow < 0.01)// shadowでないとき
+    gl_FragColor = diffuse + ambient + specular;
+  else// shadowのとき
+    gl_FragColor = vec4(0.0, 0.0, 0.0, u_shadow);
+}
+</script>
+
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/kwgShader.js"></script>
+<script src="../lib/kwgMatrix.js"></script>
+<script src="../lib/kwgMath.js"></script>
+<script src="../lib/kwgPrimitive.js"></script>
+<script src="../lib/kwgTexture.js"></script>
+<script src="../lib/kwgSupport.js"></script>
+<script src="../lib/kwgRigidTex.js"></script>
+<script src="dispMap.js"></script>
+</body>
+</html>

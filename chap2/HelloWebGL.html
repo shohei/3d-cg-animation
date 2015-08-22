@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>HellWebGL</title>
+</head>
+
+<body onload = "webMain()">
+<canvas id="WebGL" width="400" height="400" style="border: 1px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+
+<script src="../lib/webgl-utils.js"></script>
+
+<script>
+alert("ようこそWebGL へ");
+function webMain() 
+{
+  // Canvas要素を取得する
+  canvas = document.getElementById('WebGL');
+  
+  // WebGL描画用のコンテキストを取得する
+  gl = WebGLUtils.setupWebGL(canvas);
+  if (!gl) 
+  {
+    alert('WebGLコンテキストの取得に失敗!');
+    return;
+  }
+  // Canvasをクリアする色を設定する
+  gl.clearColor(1.0, 1.0, 0.0, 1.0);
+  // Canvasをクリアする
+  gl.clear(gl.COLOR_BUFFER_BIT);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE htnl>
+<html lang = "ja">
+<head>
+<meta charset = "utf-8" />
+<title>HellCanvas</title>
+</head>
+  
+<body onload = "main()">
+<!-- canvasタグを定義 -->
+<canvas id = "sample" width = "300" height = "250" style="border: 1px solid;">
+canvasをサポートしたブラウザを使用してください
+</canvas>
+
+<script>
+function main()
+{
+  //canvas要素を取得
+  var canvas = document.getElementById("sample");
+  //描画コンテキストを取得
+  var ctx = canvas.getContext("2d");
+  //文字を描画
+  ctx.fillText("Hello Canvas", 20, 20);
+  //四角を描画
+  ctx.fillStyle = "yellow";
+  ctx.fillRect(50, 50, 100, 100);
+  //文字を赤で縦横2倍で描画
+  ctx.fillStyle = "red";
+  ctx.scale(2, 2);
+  ctx.fillText("Hello Canvas", 20, 20);//座標もscale倍される
+  //さらに2倍にし20度回転
+  ctx.fillStyle = "black";
+  ctx.rotate(20 * Math.PI / 180.0);//20°回転
+  ctx.scale(2, 2);
+  ctx.fillText("Hello Canvas", 20, 30);//座標もscale倍される
+}
+</script>
+</body>
+</html>

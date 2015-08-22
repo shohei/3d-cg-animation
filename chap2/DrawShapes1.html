@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>DrawShapes1</title>
+</head>
+
+<body onload="webMain()">
+<table>
+<tr>
+<form name = "form1">
+<p> canvasサイズX<input type="number" name = "c_sizeX" value = "400" step = "50" min = "200" style = "width:50px;" onClick = "onClickC_Size()" > 
+ Y<input type="number" name = "c_sizeY" value = "400" step = "50" min = "200" style = "width:50px;"  onClick = "onClickC_Size()"> </p> 
+
+</form>
+</tr>
+<tr>
+<canvas id="WebGL" width="400" height="400" style="border: 2px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+</tr>
+</table>
+
+<script id = "vs" type="x-shader/x-vertex"> // 頂点シェーダのプログラム
+attribute vec4 a_vertex;
+void main() 
+{
+  gl_Position = a_vertex ; 
+}
+</script>
+
+<script id = "fs" type="x-shader/x-fragment">//フラグメントシェーダのプログラム
+precision mediump float;//これを省略するとエラー！
+uniform vec4 u_color;
+void main() 
+{
+    gl_FragColor = u_color;
+}
+</script>
+
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/kwgShader.js"></script>
+<script src="drawShapes1.js"></script>
+</body>
+</html>

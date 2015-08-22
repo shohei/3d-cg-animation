@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<title>DrawTriangle2</title>
+</head>
+
+<body onload = "webMain()">
+<canvas id="WebGL" width="400" height="400" style="border: 1px solid;">
+Canvasをサポートしているブラウザを使用してください。
+</canvas>
+
+<script id = 'vs' type="x-shader/x-vertex">// 頂点シェーダのプログラム
+attribute vec4 a_vertex;
+attribute vec4 a_color;
+varying vec4 v_color;
+void main() 
+{
+  gl_Position = a_vertex;
+  v_color = a_color;
+}
+</script>
+
+<script id = 'fs' type="x-shader/x-fragment">// フラグメントシェーダのプログラム
+precision mediump float;//これを省略するとエラー！
+varying vec4 v_color;
+void main() 
+{
+  gl_FragColor = v_color;
+}
+</script>
+
+<script src="../lib/webgl-utils.js"></script>
+<script src="../lib/kwgShader.js"></script>
+<script src="drawTriangle2.js"></script>
+
+</body>
+</html>
